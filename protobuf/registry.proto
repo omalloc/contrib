@@ -1,0 +1,13 @@
+syntax = "proto3";
+package omalloc.protobuf;
+
+option go_package = "github.com/omalloc/contrib/protobuf";
+option java_multiple_files = true;
+option java_package = "com.omalloc.protobuf";
+option objc_class_prefix = "Registry";
+
+message Registry {
+  bool enabled = 1;
+  bool only_discovery = 2;
+  repeated string endpoints = 3;
+}

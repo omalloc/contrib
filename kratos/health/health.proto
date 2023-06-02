@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package api.health;
+
+option go_package = "github.com/omalloc/contrib/health;health";
+option java_multiple_files = true;
+option java_package = "api.health";
+
+enum Status {
+  UNKNOWN = 0;
+  UP = 1;
+  DOWN = 2;
+}
+
+message HealthRequest {}
+
+message HealthReply {
+  Status status = 1;
+  map<string, Status> components = 2;
+}
