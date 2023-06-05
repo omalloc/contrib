@@ -1,21 +1,27 @@
 package resty_test
 
 import (
-	"testing"
-	"time"
+	"fmt"
 
 	"github.com/omalloc/contrib/kratos/resty"
 )
 
-func TestClient(t *testing.T) {
-	client := resty.New(
-		resty.WithDebug(true),
-		resty.WithTimeout(5*time.Second),
-	)
+type TestAnythingBody struct {
+	Args struct {
+		Example string `json:"example,omitempty"`
+	} `json:"args"`
+	Headers map[string]string `json:"headers"`
+}
 
-	resp, err := client.R().Get("http://localhost:8080/api/app1/v1/hello")
+func ExampleNew() {
+	client := resty.New()
+
+	var body TestAnythingBody
+	resp, err := client.NewRequest().SetResult(&body).Get("https://httpbin.org/anything?example=new")
 	if err != nil {
-		t.Error(err)
+		panic(err)
 	}
-	t.Log(resp)
+
+	// Output: 200-new
+	fmt.Printf("%d-%s", resp.StatusCode(), body.Args.Example)
 }
