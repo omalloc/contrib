@@ -43,11 +43,11 @@ func (h *Server) Stop(ctx context.Context) error {
 	return nil
 }
 
-func NewServer(logger log.Logger, s *http.Server, checkers []Checker) *Server {
+func NewServer(health []Checker, logger log.Logger, s *http.Server) *Server {
 	return &Server{
 		s:   s,
 		log: log.NewHelper(log.With(logger, "component", "health")),
-		srv: NewHealthService(logger, checkers),
+		srv: NewHealthService(logger, health),
 	}
 }
 
@@ -70,12 +70,14 @@ func NewHealthService(logger log.Logger, checkers []Checker) *HealthService {
 		components: make(map[string]Status),
 	}
 
+	s.log.Debugf("health checker count %d", len(checkers))
+
 	go s.checker()
 	return s
 }
 
 func (s *HealthService) checker() {
-	ticker := time.NewTicker(time.Second * 5)
+	ticker := time.NewTicker(time.Millisecond * 100)
 
 loop:
 	for {
@@ -86,6 +88,7 @@ loop:
 			break loop
 
 		case <-ticker.C:
+			ticker.Stop()
 			for _, checker := range s.checkers {
 				s.mu.Lock()
 				name := reflect.ValueOf(checker).Elem().Type().Name()
