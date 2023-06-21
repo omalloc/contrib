@@ -3,6 +3,7 @@ package resty
 import (
 	"crypto/tls"
 	"fmt"
+	"go.opentelemetry.io/otel/codes"
 	"io"
 	"net"
 	"net/http"
@@ -143,6 +144,11 @@ func (r *TracerTransport) RoundTrip(req *http.Request) (resp *http.Response, err
 	if err != nil {
 		span.RecordError(err, trace.WithTimestamp(time.Now()))
 		return
+	}
+
+	// 如果有错误，记录一下错误状态，4xx 5xx
+	if resp.StatusCode >= 400 {
+		span.SetStatus(codes.Error, resp.Status)
 	}
 
 	if resp.Body != nil {
