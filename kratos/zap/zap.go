@@ -33,13 +33,14 @@ type Config = zap.Config
 
 type Option func(config *Config)
 
+// WithEncoding setter log encoding. only support `json` and `console`
 func WithEncoding(encoding string) Option {
 	return func(cfg *Config) {
 		cfg.Encoding = encoding
 	}
 }
 
-// WithLevel setter log level
+// WithLevel setter log level. alias zap.config.OutputPaths
 func WithLevel(lvl Level) Option {
 	return func(cfg *Config) {
 		cfg.Level = zap.NewAtomicLevelAt(lvl)
@@ -53,6 +54,13 @@ func WithLevelString(lvl string) Option {
 		if err == nil {
 			cfg.Level = zap.NewAtomicLevelAt(l)
 		}
+	}
+}
+
+// WithOutput setter log output paths. valid `stdout` `stderr`
+func WithOutput(paths []string) Option {
+	return func(cfg *Config) {
+		cfg.OutputPaths = paths
 	}
 }
 
@@ -72,6 +80,8 @@ func New(opts ...Option) *zap.Logger {
 	cfg.EncoderConfig.TimeKey = ""
 	cfg.EncoderConfig.MessageKey = ""
 	cfg.EncoderConfig.CallerKey = ""
+	// 默认输出到 stdout
+	cfg.OutputPaths = []string{"stdout"}
 
 	// 默认等级为 debug
 	cfg.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)

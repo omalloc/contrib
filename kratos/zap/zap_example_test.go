@@ -1,19 +1,25 @@
 package zap_test
 
 import (
-	"fmt"
-
 	"github.com/omalloc/contrib/kratos/zap"
 )
 
 func ExampleWithLevel() {
-	// Output: debug
+	// Output: {"level":"debug"}
 
 	log := zap.New(zap.WithLevel(zap.DebugLevel))
+	log.Debug("no-debug")
 
-	if ok := log.Core().Enabled(zap.DebugLevel); !ok {
-		fmt.Println("no-debug")
-		return
-	}
-	fmt.Println("debug")
+	log = zap.New(zap.WithLevel(zap.InfoLevel))
+	log.Debug("info")
+}
+
+func ExampleVerbose() {
+	// Output:
+	// {"level":"info"}
+	// {"level":"debug"}
+
+	log := zap.New(zap.Verbose(true))
+	log.Info("info")
+	log.Debug("debug")
 }
