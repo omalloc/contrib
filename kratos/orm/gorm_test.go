@@ -51,8 +51,10 @@ func ExampleNew() {
 	}
 
 	for _, user := range users {
-		fmt.Printf("%d--%s", user.ID, user.Name)
+		fmt.Printf("%d--%s\n", user.ID, user.Name)
 	}
 
-	// Output: 1--test12--test1
+	// Output:
+	// 1--test1
+	// 2--test1
 }

@@ -5,13 +5,12 @@ import (
 )
 
 func ExampleWithLevel() {
-	// Output: {"level":"debug"}
-
-	log := zap.New(zap.WithLevel(zap.DebugLevel))
+	// Output:
+	// {"level":"info"}
+	
+	log := zap.New(zap.WithLevel(zap.InfoLevel))
 	log.Debug("no-debug")
-
-	log = zap.New(zap.WithLevel(zap.InfoLevel))
-	log.Debug("info")
+	log.Info("info")
 }
 
 func ExampleVerbose() {
