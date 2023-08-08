@@ -2,6 +2,7 @@ package registry_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -22,7 +23,7 @@ func TestRegistry(t *testing.T) {
 		f()
 	})
 
-	if err != registry.ErrNoEnabledRegistry {
+	if errors.Is(err, registry.ErrNoConfigureEndpoints) {
 		t.Fatal(err)
 	}
 

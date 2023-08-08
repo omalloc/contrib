@@ -13,7 +13,7 @@ type CleanupFunc func(func())
 
 func NewEtcdAdapter(c *protobuf.Registry, fn CleanupFunc) (*clientv3.Client, error) {
 	if !c.Enabled {
-		return nil, registry.ErrNoEnabledRegistry
+		return nil, nil
 	}
 
 	if c.GetEndpoints() == nil {

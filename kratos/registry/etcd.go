@@ -18,8 +18,9 @@ var (
 )
 
 func NewEtcd(c *protobuf.Registry) (*clientv3.Client, func(), error) {
+	// not enabled registry
 	if !c.Enabled {
-		return nil, emptyCallback, ErrNoEnabledRegistry
+		return nil, emptyCallback, nil
 	}
 
 	if c.GetEndpoints() == nil {
