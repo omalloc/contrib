@@ -10,6 +10,7 @@ import (
 
 var (
 	ErrNoConfigureEndpoints = errors.New("registry:: no configure endpoints")
+	ErrNoEnabledRegistry    = errors.New("registry:: no enabled registry")
 )
 
 var (
