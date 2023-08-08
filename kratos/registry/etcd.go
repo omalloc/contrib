@@ -18,6 +18,10 @@ var (
 )
 
 func NewEtcd(c *protobuf.Registry) (*clientv3.Client, func(), error) {
+	if !c.Enabled {
+		return nil, emptyCallback, ErrNoEnabledRegistry
+	}
+
 	if c.GetEndpoints() == nil {
 		return nil, emptyCallback, ErrNoConfigureEndpoints
 	}
