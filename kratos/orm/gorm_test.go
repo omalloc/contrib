@@ -2,6 +2,7 @@ package orm_test
 
 import (
 	"fmt"
+	"testing"
 	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -16,8 +17,11 @@ type User struct {
 	Name string `json:"name" gorm:"column:name;"`
 }
 
-func ExampleNew() {
+func ExampleNew(t *testing.T) {
 	// Need env `CGO_ENABLED=0`
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 
 	db, err := orm.New(
 		orm.WithDriver(sqlite.Open("file:test.db?cache=shared&mode=memory&charset=utf8mb4&parseTime=true&loc=Local")),

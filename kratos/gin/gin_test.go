@@ -17,7 +17,7 @@ import (
 	kgin "github.com/omalloc/contrib/kratos/gin"
 )
 
-func ExampleMiddlewarese() {
+func ExampleF_Middlewarese() {
 	r := gin.New()
 	r.Use(kgin.Middlewares(
 		recovery.Recovery(),
