@@ -17,9 +17,10 @@ type User struct {
 }
 
 func ExampleNew() {
+	// Need env `CGO_ENABLED=0`
 
 	db, err := orm.New(
-		orm.WithDriver(sqlite.Open("file:test.db?cache=shared&mode=memory")),
+		orm.WithDriver(sqlite.Open("file:test.db?cache=shared&mode=memory&charset=utf8mb4&parseTime=true&loc=Local")),
 		orm.WithTracing(),
 		orm.WithLogger(
 			orm.WithDebug(),
