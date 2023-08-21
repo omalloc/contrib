@@ -70,8 +70,11 @@ func operationForQuery(query, op string) string {
 
 func (op *GormOpenTelemetryPlugin) before(operation string) traceHookFunc {
 	return func(tx *gorm.DB) {
-		tx.Statement.Context, _ = op.tracer.
-			Start(tx.Statement.Context, op.spanName(tx, operation), trace.WithSpanKind(trace.SpanKindClient))
+		// skip the reporting if not recording
+		if !tx.Statement.SkipHooks {
+			tx.Statement.Context, _ = op.tracer.
+				Start(tx.Statement.Context, op.spanName(tx, operation), trace.WithSpanKind(trace.SpanKindClient))
+		}
 	}
 }
 
@@ -107,6 +110,11 @@ func chunkBy(val string, size int, callback func(string, ...trace.EventOption)) 
 
 func (op *GormOpenTelemetryPlugin) after(operation string) traceHookFunc {
 	return func(tx *gorm.DB) {
+		// skip the reporting if not recording
+		if tx.Statement.SkipHooks {
+			return
+		}
+
 		span := trace.SpanFromContext(tx.Statement.Context)
 		if !span.IsRecording() {
 			// skip the reporting if not recording

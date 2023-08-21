@@ -2,6 +2,9 @@
 
 Kratos ORM is a GORM for Kratos Framework.
 
+- Support OpenTelemetry (`Statement.SkipHooks` skip the reporting if not recording)
+
+
 ## Installation
 
 ### with cgo
