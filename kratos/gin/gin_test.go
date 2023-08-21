@@ -17,7 +17,8 @@ import (
 	kgin "github.com/omalloc/contrib/kratos/gin"
 )
 
-func ExampleF_Middlewarese() {
+func ExampleMiddlewares() {
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(kgin.Middlewares(
 		recovery.Recovery(),
@@ -25,10 +26,14 @@ func ExampleF_Middlewarese() {
 		metadata.Server(),
 	))
 
+	generator := func(value string) string {
+		return fmt.Sprintf("hello %s", value)
+	}
+
 	r.GET("/hellworld", func(ctx *gin.Context) {
 		v := ctx.Query("name")
 		ctx.JSON(200, gin.H{
-			"message": fmt.Sprintf("hello %s", v),
+			"message": generator(v),
 		})
 	})
 
@@ -37,10 +42,6 @@ func ExampleF_Middlewarese() {
 		panic(err)
 	}
 	addr := listener.Addr().String()
-	// _, port, err := net.SplitHostPort(addr)
-	// if err != nil {
-	// 	panic(err)
-	// }
 
 	httpSrv := http.NewServer(http.Listener(listener))
 	httpSrv.HandlePrefix("/", r)

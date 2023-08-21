@@ -33,6 +33,7 @@ func (er *errorRender) WriteContentType(w http.ResponseWriter) {
 }
 
 // Error encodes the object to the HTTP response.
+// It is recommended that you return error directly.
 func Error(c *gin.Context, err error) {
 	if err == nil {
 		c.Status(http.StatusOK)
@@ -49,6 +50,7 @@ func Error(c *gin.Context, err error) {
 	code := int(se.Code)
 	c.Render(code, &errorRender{body: body, contentType: contentType})
 	c.Abort()
+	//lint:ignore S1023 gin.Abort() will not return
 	return
 }
 
