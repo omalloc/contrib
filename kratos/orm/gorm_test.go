@@ -2,11 +2,11 @@ package orm_test
 
 import (
 	"fmt"
-	"testing"
 	"time"
 
+	// "gorm.io/driver/sqlite" // with cgo sqlite3
+	"github.com/glebarez/sqlite" // without cgo sqlite3
 	"github.com/go-kratos/kratos/v2/log"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
 	"github.com/omalloc/contrib/kratos/orm"
@@ -17,12 +17,7 @@ type User struct {
 	Name string `json:"name" gorm:"column:name;"`
 }
 
-func ExampleNew(t *testing.T) {
-	// Need env `CGO_ENABLED=0`
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
-
+func ExampleNew() {
 	db, err := orm.New(
 		orm.WithDriver(sqlite.Open("file:test.db?cache=shared&mode=memory&charset=utf8mb4&parseTime=true&loc=Local")),
 		orm.WithTracing(),
