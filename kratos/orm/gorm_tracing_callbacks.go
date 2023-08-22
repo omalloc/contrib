@@ -48,9 +48,9 @@ func (op *GormOpenTelemetryPlugin) spanName(tx *gorm.DB, operation string) strin
 
 	operation = operationForQuery(query, operation)
 
-	target := op.c.dbName
-	if target == "" {
-		target = tx.Dialector.Name()
+	target := tx.Dialector.Name()
+	if op.c.dbName != "" {
+		target += "." + op.c.dbName
 	}
 
 	if tx.Statement != nil && tx.Statement.Table != "" {

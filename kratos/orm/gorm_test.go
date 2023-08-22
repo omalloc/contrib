@@ -34,8 +34,7 @@ func ExampleNew() {
 	}
 
 	// 创建测试表
-	_ = db.AutoMigrate(&User{})
-	db.Migrator()
+	_ = db.Session(&gorm.Session{SkipHooks: true}).AutoMigrate(&User{})
 
 	if err := db.Create(&User{Name: "test1"}).Error; err != nil {
 		println(err.Error())
