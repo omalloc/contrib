@@ -21,6 +21,7 @@ type Config struct {
 	opts     *gorm.Config
 	driver   gorm.Dialector
 	log      glog.Interface
+	tracer   *GormOpenTelemetryPlugin
 	tracing  bool
 	hasDebug bool
 }
@@ -34,10 +35,18 @@ func WithDriver(driver gorm.Dialector) Option {
 	}
 }
 
-// WithTracing set gorm-tracing. used for opentracing.
+// WithTracing set gorm-tracing. used for opentelemetry.
 func WithTracing() Option {
 	return func(c *Config) {
 		c.tracing = true
+	}
+}
+
+// WithTracingOpts set gorm-tracing some opts. used for opentelemetry.
+func WithTracingOpts(opts ...TraceOption) Option {
+	return func(c *Config) {
+		c.tracing = true
+		c.tracer = NewTracer(opts...)
 	}
 }
 
@@ -77,7 +86,10 @@ func New(opts ...Option) (*gorm.DB, error) {
 
 	// set opentelemetry tracing.
 	if c.tracing {
-		_ = db.Use(NewTracer())
+		if c.tracer == nil {
+			c.tracer = NewTracer()
+		}
+		_ = db.Use(c.tracer)
 	}
 
 	return db, nil

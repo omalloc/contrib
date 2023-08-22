@@ -20,7 +20,7 @@ type User struct {
 func ExampleNew() {
 	db, err := orm.New(
 		orm.WithDriver(sqlite.Open("file:test.db?cache=shared&mode=memory&charset=utf8mb4&parseTime=true&loc=Local")),
-		orm.WithTracing(),
+		orm.WithTracingOpts(orm.WithDatabaseName("test")),
 		orm.WithLogger(
 			orm.WithDebug(),
 			orm.WIthSlowThreshold(time.Second*2),
