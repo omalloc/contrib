@@ -21,13 +21,20 @@ type gormLogger struct {
 type GormLoggerOption func(*gormLogger)
 
 func NewLogger(opts ...GormLoggerOption) *gormLogger {
-	return &gormLogger{
+	// default options
+	r := &gormLogger{
 		debug:                 false,
 		dbLog:                 log.NewHelper(log.GetLogger()),
 		SlowThreshold:         500 * time.Millisecond, // 500毫秒查询 + 500毫秒业务响应 = 1s 用户最佳体验 loading 之内，超过则属于慢查询
 		SkipCallerLookup:      false,
 		SkipErrRecordNotFound: true,
 	}
+	// apply custom options
+	for _, opt := range opts {
+		opt(r)
+	}
+
+	return r
 }
 
 func WithDebug() GormLoggerOption {
