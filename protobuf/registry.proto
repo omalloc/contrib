@@ -10,4 +10,5 @@ message Registry {
   bool enabled = 1;
   bool only_discovery = 2;
   repeated string endpoints = 3;
+  string namespace = 4;
 }

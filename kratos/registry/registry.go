@@ -18,14 +18,23 @@ func NewRegistrar(client *clientv3.Client, c *protobuf.Registry) registry.Regist
 		return nil
 	}
 
-	return etcd.New(client)
+	opts := make([]etcd.Option, 0)
+	if c.Namespace != "" {
+		opts = append(opts, etcd.Namespace(c.Namespace))
+	}
+	return etcd.New(client, opts...)
 }
 
 // NewDiscovery ... init etcd Discovery
-func NewDiscovery(client *clientv3.Client) registry.Discovery {
+func NewDiscovery(client *clientv3.Client, c *protobuf.Registry) registry.Discovery {
 	if client == nil {
 		return nil
 	}
 
-	return etcd.New(client)
+	opts := make([]etcd.Option, 0)
+	if c.Namespace != "" {
+		opts = append(opts, etcd.Namespace(c.Namespace))
+	}
+
+	return etcd.New(client, opts...)
 }
