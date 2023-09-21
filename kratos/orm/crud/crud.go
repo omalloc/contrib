@@ -44,9 +44,9 @@ func (r *crud[T]) SelectList(ctx context.Context, pagination *protobuf.Paginatio
 		err  error
 	)
 	err = r.db.WithContext(ctx).Model(new(T)).
+		Count(pagination.Count()).
 		Offset(pagination.Offset()).
 		Limit(pagination.Limit()).
-		Count(pagination.Count()).
 		Find(&list).Error
 
 	return list, err
