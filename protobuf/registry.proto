@@ -1,5 +1,5 @@
 syntax = "proto3";
-package omalloc.protobuf;
+package protobuf;
 
 option go_package = "github.com/omalloc/contrib/protobuf";
 option java_multiple_files = true;
@@ -7,8 +7,12 @@ option java_package = "com.omalloc.protobuf";
 option objc_class_prefix = "Registry";
 
 message Registry {
+  // 是否启用服务注册
   bool enabled = 1;
+  // 是否只作为服务发现，不自注册
   bool only_discovery = 2;
+  // 服务注册中心地址
   repeated string endpoints = 3;
+  // 服务命名空间
   string namespace = 4;
 }

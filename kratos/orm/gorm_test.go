@@ -1,6 +1,7 @@
 package orm_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -10,11 +11,28 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/omalloc/contrib/kratos/orm"
+	"github.com/omalloc/contrib/kratos/orm/crud"
+	"github.com/omalloc/contrib/protobuf"
 )
 
 type User struct {
-	gorm.Model
+	ID   int64  `json:"id" gorm:"column:id;primaryKey;autoIncrement;"`
 	Name string `json:"name" gorm:"column:name;"`
+
+	orm.DBModel
+}
+
+type userRepo struct {
+	crud.CRUD[User]
+
+	db *gorm.DB
+}
+
+func NewUserRepo(db *gorm.DB) *userRepo {
+	return &userRepo{
+		CRUD: crud.New[User](db),
+		db:   db,
+	}
 }
 
 func ExampleNew() {
@@ -36,17 +54,25 @@ func ExampleNew() {
 	// 创建测试表
 	_ = db.Session(&gorm.Session{SkipHooks: true}).AutoMigrate(&User{})
 
-	if err := db.Create(&User{Name: "test1"}).Error; err != nil {
+	repo := NewUserRepo(db)
+
+	if err := repo.Create(context.Background(), &User{Name: "test1"}); err != nil {
 		println(err.Error())
 	}
 
-	if err := db.Create(&User{Name: "test1"}).Error; err != nil {
+	if err := repo.Create(context.Background(), &User{Name: "test1"}); err != nil {
 		println(err.Error())
 	}
 
-	var users []User
-	if err := db.Model(&User{}).Find(&users).Error; err != nil {
+	// 自动分页
+	pagination := protobuf.PageWrap(nil)
+	users, err := repo.SelectList(context.Background(), pagination)
+	if err != nil {
 		println(err.Error())
+	}
+
+	if len(users) != int(pagination.Resp().Total) {
+		println("data total size not equal, got %d want %d", len(users), pagination.Resp().Total)
 	}
 
 	for _, user := range users {

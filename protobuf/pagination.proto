@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package protobuf;
+
+option go_package = "github.com/omalloc/contrib/protobuf";
+option java_multiple_files = true;
+option java_package = "com.omalloc.protobuf";
+option objc_class_prefix = "Pagination";
+
+// 通用的分页信息
+message Pagination {
+  int32 current = 1;
+  int32 page_size = 2;
+  int32 total = 3;
+  optional int64 raw_total = 4;
+}
