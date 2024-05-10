@@ -43,10 +43,6 @@ func TestBaseCache(t *testing.T) {
 		case <-ticker.C:
 			// do something
 			kv := cc.GetALL(context.Background())
-			for k, v := range kv {
-				println("k: %d\t v: %s", k, v)
-			}
-			println("--------------")
 			if len(kv) <= 0 {
 				t.Logf("kv is empty")
 			}
