@@ -29,7 +29,6 @@ func (er *errorRender) Render(w http.ResponseWriter) error {
 // WriteContentType (JSON) writes JSON ContentType.
 func (er *errorRender) WriteContentType(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", er.contentType)
-
 }
 
 // Error encodes the object to the HTTP response.

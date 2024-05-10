@@ -9,3 +9,5 @@
 - tracing (jaeger trace)
 - health (health check used go-kratos http)
 - gin (kratos gin-middleware [issue#6](https://github.com/go-kratos/gin/issues/6))
+- caching
+  - loadable-cache (auto refresh kv data)

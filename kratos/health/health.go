@@ -60,6 +60,7 @@ type HealthService struct {
 	status     Status
 	components map[string]Status
 	checkers   []Checker
+	tick       time.Duration
 }
 
 func NewHealthService(logger log.Logger, checkers []Checker) *HealthService {
@@ -69,25 +70,25 @@ func NewHealthService(logger log.Logger, checkers []Checker) *HealthService {
 		status:     Status_DOWN,
 		stop:       make(chan struct{}, 1),
 		components: make(map[string]Status),
+		tick:       time.Second * 1,
 	}
 
 	s.log.Debugf("health checker count %d", len(checkers))
 
 	go s.checker()
+
 	return s
 }
 
 func (s *HealthService) checker() {
 	ticker := time.NewTicker(time.Millisecond * 100)
 
-loop:
 	for {
 		select {
 		case <-s.stop:
 			ticker.Stop()
 			s.log.Debug("stop health checker")
-			break loop
-
+			return
 		case <-ticker.C:
 			ticker.Stop()
 			for _, checker := range s.checkers {
@@ -102,11 +103,9 @@ loop:
 
 				s.log.Debugf("health check --> component: %s, status: %s", name, s.components[name])
 			}
-			ticker = time.NewTicker(time.Second * 5)
+			ticker = time.NewTicker(s.tick)
 		}
 	}
-
-	s.log.Debug("health checker stopped")
 }
 
 func (s *HealthService) Health(_ context.Context, _ *HealthRequest) (*HealthReply, error) {
