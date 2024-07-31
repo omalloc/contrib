@@ -93,7 +93,7 @@ func (gl *gormLogger) Trace(ctx context.Context, begin time.Time, fc func() (str
 	timeUsed := float64(elapsed.Nanoseconds()) / 1e6
 
 	fields := make([]interface{}, 0)
-	fields = append(fields, "timeUsedMicroseconds", timeUsed)
+	fields = append(fields, "timeUsed", timeUsed)
 
 	sql, rows := fc()
 
@@ -108,7 +108,7 @@ func (gl *gormLogger) Trace(ctx context.Context, begin time.Time, fc func() (str
 	case elapsed > gl.SlowThreshold && gl.SlowThreshold != 0:
 		fields = append(fields, "sql", sql)
 		fields = append(fields, "rows", rows)
-		fields = append(fields, "slow-elapsed", gl.SlowThreshold)
+		fields = append(fields, "slowElapsed", gl.SlowThreshold)
 		gl.dbLog.Warnw(fields...)
 	// normal
 	default:
