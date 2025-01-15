@@ -44,3 +44,22 @@ func SetCurrentUser(username string) error {
 
 	return nil
 }
+
+func ParseUser(username string) (uid uint, gid uint, err error) {
+	wantedUser, err := user.Lookup(username)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	puid, err := strconv.Atoi(wantedUser.Uid)
+	if err != nil {
+		return 0, 0, fmt.Errorf("error converting UID [%s] to int: %s", wantedUser.Uid, err)
+	}
+
+	pgid, err := strconv.Atoi(wantedUser.Gid)
+	if err != nil {
+		return 0, 0, fmt.Errorf("error converting GID [%s] to int: %s", wantedUser.Gid, err)
+	}
+
+	return uint(puid), uint(pgid), nil
+}

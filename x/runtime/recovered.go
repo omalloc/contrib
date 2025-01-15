@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"fmt"
 	"runtime"
 	"strings"
 )
@@ -20,7 +19,12 @@ func PrintStackTrace(skip int) string {
 			sb.WriteString("panic: ")
 			continue
 		}
-		sb.WriteString(fmt.Sprintf("%s\n\t%s:%d\n", frame.Function, frame.File, frame.Line))
+		sb.WriteString(frame.Function)
+		sb.WriteString("\n\t")
+		sb.WriteString(frame.File)
+		sb.WriteString(":")
+		sb.WriteRune(rune(frame.Line))
+		sb.WriteString("\n")
 		if !more {
 			break
 		}

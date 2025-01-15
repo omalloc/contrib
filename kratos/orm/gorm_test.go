@@ -36,15 +36,16 @@ func NewUserRepo(db *gorm.DB) *userRepo {
 }
 
 func ExampleNew() {
+	// file stored = file:test.db?cache=shared&mode=memory&charset=utf8mb4&parseTime=true&loc=Local
+	// memory stored
 	db, err := orm.New(
-		orm.WithDriver(sqlite.Open("file:test.db?cache=shared&mode=memory&charset=utf8mb4&parseTime=true&loc=Local")),
+		orm.WithDriver(sqlite.Open(":memory:?cache=shared&mode=memory&charset=utf8mb4&parseTime=true&loc=Local")),
 		orm.WithTracingOpts(orm.WithDatabaseName("test")),
 		orm.WithLogger(
-			orm.WithDebug(),
 			orm.WIthSlowThreshold(time.Second*2),
 			orm.WithSkipCallerLookup(true),
 			orm.WithSkipErrRecordNotFound(true),
-			orm.WithLogHelper(log.NewFilter(log.GetLogger(), log.FilterLevel(log.LevelDebug))),
+			orm.WithLogHelper(log.NewFilter(log.GetLogger(), log.FilterLevel(log.LevelInfo))),
 		),
 	)
 	if err != nil {
@@ -75,6 +76,7 @@ func ExampleNew() {
 		println("data total size not equal, got %d want %d", len(users), pagination.Resp().Total)
 	}
 
+	fmt.Println()
 	for _, user := range users {
 		fmt.Printf("%d--%s\n", user.ID, user.Name)
 	}

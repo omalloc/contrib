@@ -45,6 +45,49 @@ func TestSetCurrentUser(t *testing.T) {
 	}
 }
 
+func TestParseUser(t *testing.T) {
+	tests := []struct {
+		name     string
+		username string
+		wantUid  uint
+		wantGid  uint
+		wantErr  bool
+	}{
+		{
+			name:     "有效用户",
+			username: "root", // 使用一个确定存在的用户
+			wantUid:  0,      // root用户通常是0
+			wantGid:  0,      // root组通常是0
+			wantErr:  false,
+		},
+		{
+			name:     "无效用户",
+			username: "nonexistentuser123",
+			wantUid:  0,
+			wantGid:  0,
+			wantErr:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			uid, gid, err := runtime.ParseUser(tt.username)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr {
+				if uid != tt.wantUid {
+					t.Errorf("ParseUser() uid = %v, want %v", uid, tt.wantUid)
+				}
+				if gid != tt.wantGid {
+					t.Errorf("ParseUser() gid = %v, want %v", gid, tt.wantGid)
+				}
+			}
+		})
+	}
+}
+
 // 辅助函数：获取当前用户名
 func getCurrentUsername(t *testing.T) string {
 	current, err := user.Current()

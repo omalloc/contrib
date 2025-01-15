@@ -3,7 +3,7 @@ package gin_test
 import (
 	"context"
 	"fmt"
-	"log"
+	"io"
 	"net"
 	"testing"
 	"time"
@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/errors"
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/metadata"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
@@ -62,18 +63,12 @@ func ExampleMiddlewares() {
 	httpSrv.HandlePrefix("/", r)
 
 	app := kratos.New(
+		kratos.Logger(log.NewStdLogger(io.Discard)),
 		kratos.Name("gin-test"),
 		kratos.Server(
 			httpSrv,
 		),
 	)
-
-	go func() {
-		ticker := time.NewTicker(2 * time.Second)
-
-		<-ticker.C
-		_ = app.Stop()
-	}()
 
 	go func() {
 		ticker := time.NewTicker(200 * time.Millisecond)
@@ -107,10 +102,14 @@ func ExampleMiddlewares() {
 			panic(err)
 		}
 		fmt.Println(resp.String())
+
+		if err := app.Stop(); err != nil {
+			fmt.Println(err)
+		}
 	}()
 
 	if err := app.Run(); err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 
 	// Output:

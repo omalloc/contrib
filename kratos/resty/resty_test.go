@@ -2,6 +2,7 @@ package resty_test
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/omalloc/contrib/kratos/resty"
 )
@@ -14,7 +15,7 @@ type TestAnythingBody struct {
 }
 
 func ExampleNew() {
-	client := resty.New()
+	client := resty.New().SetTimeout(time.Second * 10)
 
 	var body TestAnythingBody
 	resp, err := client.NewRequest().SetResult(&body).Get("https://httpbin.org/anything?example=new")

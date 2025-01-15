@@ -10,7 +10,7 @@ import (
 
 type CRUD[T any] interface {
 	Create(ctx context.Context, t *T) error
-	Update(ctx context.Context, t *T) error
+	Update(ctx context.Context, id int64, t *T) error
 	Delete(ctx context.Context, id int64) error
 	SelectList(ctx context.Context, pagination *protobuf.Pagination) ([]*T, error)
 	SelectOne(ctx context.Context, id int64) (*T, error)
@@ -26,16 +26,17 @@ func (r *crud[T]) Create(ctx context.Context, t *T) error {
 		Create(t).Error
 }
 
-func (r *crud[T]) Update(ctx context.Context, t *T) error {
+func (r *crud[T]) Update(ctx context.Context, id int64, t *T) error {
 	return r.db.WithContext(ctx).
 		Model(new(T)).
+		Where("id = ?", id).
 		Save(t).Error
 }
 
 func (r *crud[T]) Delete(ctx context.Context, id int64) error {
 	return r.db.WithContext(ctx).
-		Model(new(T)).
-		Delete(id).Error
+		Where("id = ?", id).
+		Delete(new(T)).Error
 }
 
 func (r *crud[T]) SelectList(ctx context.Context, pagination *protobuf.Pagination) ([]*T, error) {

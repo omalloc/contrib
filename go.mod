@@ -3,6 +3,7 @@ module github.com/omalloc/contrib
 go 1.21
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/gin-gonic/gin v1.9.1
 	github.com/glebarez/sqlite v1.11.0
 	github.com/go-kratos/kratos/contrib/log/zap/v2 v2.0.0-20240427113814-a803e9d967a6
@@ -20,6 +21,7 @@ require (
 	go.uber.org/fx v1.21.1
 	go.uber.org/zap v1.27.0
 	google.golang.org/protobuf v1.33.0
+	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.10
 )
 
@@ -42,6 +44,7 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.19.0 // indirect
+	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
