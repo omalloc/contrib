@@ -77,8 +77,8 @@ func New(opts ...Option) *zap.Logger {
 	cfg := zap.NewProductionConfig()
 
 	// 防止 kratos log 的 key 重复; took https://github.com/go-kratos/kratos/issues/1722
+	// cfg.EncoderConfig.MessageKey = "" // Updated@2025-03-14 msg key lost; took https://github.com/go-kratos/kratos/pull/3171
 	cfg.EncoderConfig.TimeKey = ""
-	cfg.EncoderConfig.MessageKey = ""
 	cfg.EncoderConfig.CallerKey = ""
 	// 默认输出到 stdout
 	cfg.OutputPaths = []string{"stdout"}
