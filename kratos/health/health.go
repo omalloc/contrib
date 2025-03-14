@@ -14,6 +14,7 @@ import (
 type Checker interface {
 	Check(ctx context.Context) error
 }
+
 type CheckerFunc func() error
 
 func (f CheckerFunc) Check(ctx context.Context) error {
@@ -55,10 +56,9 @@ func NewServer(health []Checker, logger log.Logger, s *http.Server) *Server {
 // HealthService is a health service.
 type HealthService struct {
 	log        *log.Helper
-	mu         sync.RWMutex
 	stop       chan struct{}
 	status     Status
-	components map[string]Status
+	components sync.Map
 	checkers   []Checker
 	tick       time.Duration
 }
@@ -69,7 +69,7 @@ func NewHealthService(logger log.Logger, checkers []Checker) *HealthService {
 		checkers:   checkers,
 		status:     Status_DOWN,
 		stop:       make(chan struct{}, 1),
-		components: make(map[string]Status),
+		components: sync.Map{},
 		tick:       time.Second * 1,
 	}
 
@@ -92,16 +92,12 @@ func (s *HealthService) checker() {
 		case <-ticker.C:
 			ticker.Stop()
 			for _, checker := range s.checkers {
-				s.mu.Lock()
 				name := toSnake(reflect.ValueOf(checker).Elem().Type().Name())
 				if err := checker.Check(context.Background()); err != nil {
-					s.components[name] = Status_DOWN
+					s.components.Store(name, Status_DOWN)
 				} else {
-					s.components[name] = Status_UP
+					s.components.Store(name, Status_UP)
 				}
-				s.mu.Unlock()
-
-				s.log.Debugf("health check --> component: %s, status: %s", name, s.components[name])
 			}
 			ticker = time.NewTicker(s.tick)
 		}
@@ -109,18 +105,19 @@ func (s *HealthService) checker() {
 }
 
 func (s *HealthService) Health(_ context.Context, _ *HealthRequest) (*HealthReply, error) {
-	s.status = Status_DOWN
-	for _, v := range s.components {
-		if v == Status_DOWN {
+	s.status = Status_UP
+	components := make(map[string]Status)
+	s.components.Range(func(key, value any) bool {
+		if value.(Status) == Status_DOWN {
 			s.status = Status_DOWN
-			break
 		}
-		s.status = v
-	}
+		components[key.(string)] = value.(Status)
+		return true
+	})
 
 	return &HealthReply{
 		Status:     s.status,
-		Components: s.components,
+		Components: components,
 	}, nil
 }
 

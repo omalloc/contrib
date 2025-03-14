@@ -54,15 +54,13 @@ func TestHealthService(t *testing.T) {
 	s.Start(context.Background())
 
 	go func() {
-		if err := httpSrv.Start(context.Background()); err != nil {
-			panic(err)
-		}
+		_ = httpSrv.Start(context.Background())
 	}()
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(time.Second)
 	resp, err := resty.New().NewRequest().Get("http://127.0.0.1:60180/health")
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	fmt.Println(resp.String())
 

@@ -3,7 +3,6 @@ package resty
 import (
 	"crypto/tls"
 	"fmt"
-	"go.opentelemetry.io/otel/codes"
 	"io"
 	"net"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
@@ -130,11 +130,14 @@ func (r *TracerTransport) RoundTrip(req *http.Request) (resp *http.Response, err
 	attrs = append(attrs, semconv.HTTPClientAttributesFromHTTPRequest(req)...)
 	attrs = append(attrs, semconv.HTTPTargetKey.String(req.URL.Path))
 
-	reqBody, err := req.GetBody()
-	if err == nil && reqBody != nil {
-		data, _ := io.ReadAll(reqBody)
-		if len(data) > 0 {
-			attrs = append(attrs, attribute.String("http.request.body", string(data)))
+	// 如果 body 可读，则读取 body 内容
+	if req.GetBody != nil {
+		reqBody, err := req.GetBody()
+		if err == nil && reqBody != nil {
+			data, _ := io.ReadAll(reqBody)
+			if len(data) > 0 {
+				attrs = append(attrs, attribute.String("http.request.body", string(data)))
+			}
 		}
 	}
 
