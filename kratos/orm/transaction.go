@@ -9,26 +9,51 @@ import (
 // txContextKey gorm database transaction context key
 type txContextKey struct{}
 
+type DataSourceManager interface {
+	GetDataSource() *gorm.DB
+}
+
 type Transaction interface {
-	WithContext(context.Context, func(ctx context.Context, tx *gorm.DB) error) error
+	Transaction(context.Context, func(ctx context.Context) error) error
+	WithContext(context.Context) *gorm.DB
 }
 
 type transactionManager struct {
-	db *gorm.DB
+	dsm DataSourceManager
 }
 
-func NewTransactionManager(dataSource *gorm.DB) Transaction {
+func NewTransactionManager(dsm DataSourceManager) Transaction {
 	return &transactionManager{
-		db: dataSource,
+		dsm: dsm,
 	}
 }
 
-func (tm *transactionManager) WithContext(ctx context.Context, fn func(ctx context.Context, tx *gorm.DB) error) error {
-	if tx, ok := ctx.Value(txContextKey{}).(*gorm.DB); ok {
-		return fn(ctx, tx)
+func (tm *transactionManager) WithContext(ctx context.Context) *gorm.DB {
+	if ctx == nil {
+		return tm.dsm.GetDataSource()
 	}
 
-	return tm.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		return fn(context.WithValue(ctx, txContextKey{}, tx), tx)
+	if tx, ok := ctx.Value(txContextKey{}).(*gorm.DB); ok {
+		return tx
+	}
+
+	return tm.dsm.GetDataSource().WithContext(ctx)
+}
+
+func (tm *transactionManager) Transaction(ctx context.Context, fn func(ctx context.Context) error) error {
+	if ctx == nil {
+		return tm.with(context.Background(), fn)
+	}
+
+	if _, ok := ctx.Value(txContextKey{}).(*gorm.DB); ok {
+		return fn(ctx)
+	}
+
+	return tm.with(ctx, fn)
+}
+
+func (tm *transactionManager) with(ctx context.Context, fn func(ctx context.Context) error) error {
+	return tm.dsm.GetDataSource().Transaction(func(tx *gorm.DB) error {
+		return fn(context.WithValue(ctx, txContextKey{}, tx))
 	})
 }

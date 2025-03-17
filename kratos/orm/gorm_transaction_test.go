@@ -37,13 +37,21 @@ func newData() *Data {
 	}
 }
 
+func (d *Data) GetDataSource() *gorm.DB {
+	return d.db
+}
+
 func TestTransaction(t *testing.T) {
 	data := newData()
 	data.db.AutoMigrate(&User{})
 
-	txm := orm.NewTransactionManager(data.db)
+	txm := orm.NewTransactionManager(data)
 
-	txm.WithContext(context.TODO(), func(ctx context.Context, tx *gorm.DB) error {
-		return tx.Model(&User{}).Create(&User{Name: "test1"}).Error
+	txm.Transaction(context.Background(), func(ctx context.Context) error {
+		// do something
+
+		// do something ..
+
+		return nil
 	})
 }
