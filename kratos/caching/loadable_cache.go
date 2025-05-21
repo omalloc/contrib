@@ -2,9 +2,11 @@ package caching
 
 import (
 	"context"
+	"log"
 	"sync"
 	"time"
 
+	"github.com/avast/retry-go"
 	"github.com/szyhf/go-gcache/v2"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
@@ -39,15 +41,16 @@ type loadableCache[K comparable, V any] struct {
 	exp     time.Duration      // key 过期时间
 	size    int                // 缓存大小,超出的缓存会被 evict
 	block   bool               // 是否阻塞当前调用链
-	refresh func() map[K]V     // 刷新缓存数据的函数
+	retryCount int              // 重试次数 (几次后依旧空数据则认为空数据)
+	refresh func() (map[K]V, error)     // 刷新缓存数据的函数
 	ticker  *time.Ticker       // 定时器(用于过期刷缓存)
 	stop    chan struct{}      // 停止信号
 }
 
 type Option[K comparable, V any] func(*loadableCache[K, V])
 
-// WithRefreshAfterWrite refresh data provider
-func WithRefreshAfterWrite[K comparable, V any](f func() map[K]V) Option[K, V] {
+// WithRefreshAfterWrite refresh data provider (return error will not refresh)
+func WithRefreshAfterWrite[K comparable, V any](f func() (map[K]V, error)) Option[K, V] {
 	return func(cb *loadableCache[K, V]) {
 		cb.refresh = f
 	}
@@ -85,6 +88,7 @@ func WithTracing[K comparable, V any](provider trace.TracerProvider) Option[K, V
 	}
 }
 
+
 func New[K comparable, V any](opts ...Option[K, V]) LoadableCache[K, V] {
 	cache := &loadableCache[K, V]{
 		exp:    10 * time.Second,
@@ -106,9 +110,20 @@ func New[K comparable, V any](opts ...Option[K, V]) LoadableCache[K, V] {
 		cache.ticker = time.NewTicker(cache.exp)
 
 		firstLoad := func() {
+
+
+			
 			if cache.refresh != nil {
-				ret := cache.refresh()
-				cache.putAll(ret)
+				if err  := retry.Do(func() error {
+					ret, err := cache.refresh()
+					if err != nil {
+						return err
+					}
+					cache.putAll(ret)
+					return nil
+				}); err != nil {
+					panic(err)
+				}
 			}
 		}
 		// block 状态不使用 goroutine, 卡住当前调用链等待结束
@@ -170,7 +185,10 @@ func (cb *loadableCache[K, V]) TryPurgeAndReload(ctx context.Context) bool {
 		_ = recover()
 	}()
 
-	ret := cb.refresh()
+	ret, err := cb.refresh()
+	if err != nil {
+		return false
+	}
 	return cb.putAll(ret)
 }
 
@@ -195,7 +213,11 @@ func (cb *loadableCache[K, V]) rf() {
 			return
 		case <-cb.ticker.C:
 			if cb.refresh != nil {
-				ret := cb.refresh()
+				log.Printf("refresh cache\n")
+				ret, err  := cb.refresh()
+				if err != nil {
+					continue
+				}
 				cb.putAll(ret)
 			}
 		}

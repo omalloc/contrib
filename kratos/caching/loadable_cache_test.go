@@ -2,6 +2,8 @@ package caching_test
 
 import (
 	"context"
+	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -11,13 +13,17 @@ import (
 	"github.com/omalloc/contrib/kratos/caching"
 )
 
-func fakeRefresh() map[int64]string {
+func fakeRefresh() (map[int64]string, error) {
 	key := time.Now().Unix()
+
+	if key%2 == 0 {
+		return nil, errors.New("error")
+	}
 
 	return map[int64]string{
 		key - 1: "new-value1",
 		key:     "new-value2",
-	}
+	}, nil
 }
 
 func TestBaseCache(t *testing.T) {
@@ -59,6 +65,7 @@ func TestCacheChanged(t *testing.T) {
 		caching.WithSize[int64, string](100),
 		caching.WithExpiration[int64, string](2*time.Second), // 每2秒刷新一次缓存
 		caching.WithRefreshAfterWrite(fakeRefresh),
+		caching.WithBlock[int64, string](),
 	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Microsecond)
@@ -66,13 +73,16 @@ func TestCacheChanged(t *testing.T) {
 
 	// get all
 	kvs := cc.GetALL(ctx)
-	assert.Equal(t, 0, len(kvs))
+	assert.Equal(t, 2, len(kvs))
 
 	// set key 1
-	cc.Set(ctx, 1, "value1")
+	_ = cc.Set(ctx, 1, "value1")
 
 	v, _ := cc.Get(ctx, 1)
 	assert.Equal(t, "value1", v)
+
+	kvs = cc.GetALL(ctx)
+	assert.Equal(t, 3, len(kvs))
 
 	// auto refresh
 	time.Sleep(time.Second * 3)
@@ -154,4 +164,36 @@ func TestAutoRefresh(t *testing.T) {
 	// 等待3秒 刷新后应该是2个kv
 	time.Sleep(time.Second * 3)
 	assert.Equal(t, 2, len(cc.Values(ctx)))
+}
+
+func TestConcurrent(t *testing.T) {
+	cc := caching.New(
+		caching.WithSize[int64, string](100),
+		caching.WithExpiration[int64, string](2*time.Second), // 每2秒刷新一次缓存
+		caching.WithRefreshAfterWrite(fakeRefresh),           // 每次请求刷出 2 个 kv
+		caching.WithBlock[int64, string](),
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Microsecond)
+	defer cancel()
+
+	wg := sync.WaitGroup{}
+	wg.Add(20)
+
+	for i := 0; i < 20; i++ {
+		go func() {
+			for j:=range 100 {
+				t.Logf("i: %d -> j: %d", i, j)
+				kvs := cc.GetALL(ctx)
+				if len(kvs) != 2 {
+					panic("kvs is not two-size.")
+				}
+				time.Sleep(time.Millisecond * 100)
+			}
+			wg.Done()
+		}()
+	}
+
+
+	wg.Wait()
 }
