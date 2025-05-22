@@ -2,7 +2,6 @@ package caching
 
 import (
 	"context"
-	"log"
 	"sync"
 	"time"
 
@@ -35,16 +34,17 @@ type LoadableCache[K comparable, V any] interface {
 type loadableCache[K comparable, V any] struct {
 	mu sync.RWMutex
 
-	tracer  trace.Tracer       // 链路 provider
-	traced  bool               // 是否将普通函数包装为 tracer
-	c       gcache.Cache[K, V] // gcache 对象
-	exp     time.Duration      // key 过期时间
-	size    int                // 缓存大小,超出的缓存会被 evict
-	block   bool               // 是否阻塞当前调用链
-	retryCount int              // 重试次数 (几次后依旧空数据则认为空数据)
-	refresh func() (map[K]V, error)     // 刷新缓存数据的函数
-	ticker  *time.Ticker       // 定时器(用于过期刷缓存)
-	stop    chan struct{}      // 停止信号
+	tracer       trace.Tracer            // 链路 provider
+	traced       bool                    // 是否将普通函数包装为 tracer
+	c            gcache.Cache[K, V]      // gcache 对象
+	exp          time.Duration           // key 过期时间
+	size         int                     // 缓存大小,超出的缓存会被 evict
+	block        bool                    // 是否阻塞当前调用链
+	retryCount   uint                    // 重试次数 (几次后依旧空数据则认为空数据) 默认0
+	currentRetry uint                    // 当前重试次数,每次成功是需要重置为0
+	refresh      func() (map[K]V, error) // 刷新缓存数据的函数
+	ticker       *time.Ticker            // 定时器(用于过期刷缓存)
+	stop         chan struct{}           // 停止信号
 }
 
 type Option[K comparable, V any] func(*loadableCache[K, V])
@@ -77,6 +77,13 @@ func WithBlock[K comparable, V any]() Option[K, V] {
 	}
 }
 
+// WithRetryCount retry count
+func WithRetryCount[K comparable, V any](count uint) Option[K, V] {
+	return func(cb *loadableCache[K, V]) {
+		cb.retryCount = count
+	}
+}
+
 // WithTracing enable otel tracing
 func WithTracing[K comparable, V any](provider trace.TracerProvider) Option[K, V] {
 	return func(cb *loadableCache[K, V]) {
@@ -88,14 +95,15 @@ func WithTracing[K comparable, V any](provider trace.TracerProvider) Option[K, V
 	}
 }
 
-
 func New[K comparable, V any](opts ...Option[K, V]) LoadableCache[K, V] {
 	cache := &loadableCache[K, V]{
-		exp:    10 * time.Second,
-		size:   100,
-		block:  false,
-		traced: false,
-		stop:   make(chan struct{}, 1),
+		exp:          10 * time.Second,
+		size:         100,
+		block:        false,
+		traced:       false,
+		retryCount:   0,
+		currentRetry: 0,
+		stop:         make(chan struct{}, 1),
 	}
 	// bind options
 	for _, opt := range opts {
@@ -109,22 +117,20 @@ func New[K comparable, V any](opts ...Option[K, V]) LoadableCache[K, V] {
 	if cache.refresh != nil {
 		cache.ticker = time.NewTicker(cache.exp)
 
+		// 初始化时第一次加载缓存数据
+		// 重试3次, 每次间隔最多1秒
+		// 如果3次都失败，则为空缓存
 		firstLoad := func() {
-
-
-			
-			if cache.refresh != nil {
-				if err  := retry.Do(func() error {
-					ret, err := cache.refresh()
-					if err != nil {
-						return err
-					}
-					cache.putAll(ret)
-					return nil
-				}); err != nil {
-					panic(err)
+			load := func() error {
+				ret, err := cache.refresh()
+				if err != nil {
+					return err
 				}
+				cache.putAll(ret)
+				return nil
 			}
+
+			_ = retry.Do(load, retry.Attempts(3), retry.MaxJitter(time.Second))
 		}
 		// block 状态不使用 goroutine, 卡住当前调用链等待结束
 		if cache.block {
@@ -203,34 +209,52 @@ func (cb *loadableCache[K, V]) Stop(ctx context.Context) {
 func (cb *loadableCache[K, V]) Restart(ctx context.Context) {
 	cb.ticker = time.NewTicker(cb.exp)
 
-	go cb.rf()
+	if cb.refresh != nil {
+		go cb.rf()
+	}
 }
 
 func (cb *loadableCache[K, V]) rf() {
+	load := func() {
+		ret, err := cb.refresh()
+		if err != nil {
+			// 当重试次数达到上限，则将现在的空数据写入到缓存中
+			if cb.retryCount > 0 {
+				cb.currentRetry++
+				if cb.currentRetry < cb.retryCount {
+					return
+				}
+			}
+			// 没配置重试，则返回err时，不覆盖缓存数据;防止缓存雪崩;需要清理缓存请手动执行 caching.Purge();
+			return
+		}
+
+		if cb.retryCount > 0 {
+			cb.currentRetry = 0
+		}
+		_ = cb.putAll(ret)
+	}
+
 	for {
 		select {
 		case <-cb.stop:
 			return
 		case <-cb.ticker.C:
 			if cb.refresh != nil {
-				log.Printf("refresh cache\n")
-				ret, err  := cb.refresh()
-				if err != nil {
-					continue
-				}
-				cb.putAll(ret)
+				load()
 			}
 		}
 	}
 }
 
+// putAll 写入缓存数据，如果给定空数据，也会写入；如果想要不写入，请在 putAll 前判断 len(ret) <= 0
 func (cb *loadableCache[K, V]) putAll(ret map[K]V) bool {
 	// if ret len is zero, keep cache data
 	// Tips: if you want to clear cache data, you can use cb.Purge()
-	if len(ret) <= 0 {
-		return false
-	}
-
+	// TIPS: remove by 2025-05-22
+	// if len(ret) <= 0 {
+	// 	return false
+	// }
 	cb.mu.Lock()
 	defer cb.mu.Unlock()
 

@@ -27,8 +27,7 @@ func fakeRefresh() (map[int64]string, error) {
 }
 
 func TestBaseCache(t *testing.T) {
-
-	//var c = 1
+	// var c = 1
 
 	cc := caching.New(
 		caching.WithTracing[int64, string](otel.GetTracerProvider()),
@@ -182,7 +181,7 @@ func TestConcurrent(t *testing.T) {
 
 	for i := 0; i < 20; i++ {
 		go func() {
-			for j:=range 100 {
+			for j := range 100 {
 				t.Logf("i: %d -> j: %d", i, j)
 				kvs := cc.GetALL(ctx)
 				if len(kvs) != 2 {
@@ -194,6 +193,43 @@ func TestConcurrent(t *testing.T) {
 		}()
 	}
 
-
 	wg.Wait()
+}
+
+func TestFirstLoadErr(t *testing.T) {
+	cnt := 0
+	cc := caching.New(
+		caching.WithSize[int64, string](100),
+		caching.WithExpiration[int64, string](time.Second), // 每2秒刷新一次缓存
+		caching.WithRetryCount[int64, string](3),
+		caching.WithRefreshAfterWrite(func() (map[int64]string, error) {
+			cnt++
+			if cnt < 3 {
+				return map[int64]string{
+					1: "1",
+					2: "2",
+				}, nil
+			}
+			return map[int64]string{}, errors.New("error")
+		}), // 每次请求刷出 0 个 kv
+		caching.WithBlock[int64, string](),
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Microsecond)
+	defer cancel()
+
+	kvs := cc.GetALL(ctx)
+	assert.Equal(t, 2, len(kvs))
+
+	time.Sleep(time.Second * 3)
+	kvs = cc.GetALL(ctx)
+	assert.Equal(t, 2, len(kvs))
+
+	time.Sleep(time.Second * 3)
+	kvs = cc.GetALL(ctx)
+	assert.Equal(t, 0, len(kvs))
+
+	time.Sleep(time.Second * 3)
+	kvs = cc.GetALL(ctx)
+	assert.Equal(t, 0, len(kvs))
 }
