@@ -40,60 +40,65 @@ func ListenAndServe(ctx context.Context, cfg Config) error {
 
 	buf := make([]byte, cfg.bufferSize())
 	for {
-		if err := conn.SetReadDeadline(readDeadline(ctx)); err != nil {
-			return fmt.Errorf("set read deadline: %w", err)
-		}
-
-		n, clientAddr, err := conn.ReadFromUDP(buf)
-		if err != nil {
-			if ctx.Err() != nil {
-				return nil
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+			if err := conn.SetReadDeadline(readDeadline(context.Background())); err != nil {
+				return fmt.Errorf("set read deadline: %w", err)
 			}
 
-			netErr, ok := err.(net.Error)
-			if ok && netErr.Timeout() {
+			n, clientAddr, err := conn.ReadFromUDP(buf)
+			if err != nil {
+				if ctx.Err() != nil {
+					return nil
+				}
+
+				netErr, ok := err.(net.Error)
+				if ok && netErr.Timeout() {
+					continue
+				}
+
+				cfg.logf("read discovery packet: %v", err)
 				continue
 			}
 
-			cfg.logf("read discovery packet: %v", err)
-			continue
-		}
+			msg, err := broadcast.DecodeMessage(buf[:n])
+			if err != nil {
+				cfg.logf("ignore malformed discovery packet from %s: %v", clientAddr, err)
+				continue
+			}
 
-		msg, err := broadcast.DecodeMessage(buf[:n])
-		if err != nil {
-			cfg.logf("ignore malformed discovery packet from %s: %v", clientAddr, err)
-			continue
-		}
+			if msg.Type != broadcast.MessageTypeQuery || msg.Service != cfg.Service {
+				continue
+			}
 
-		if msg.Type != broadcast.MessageTypeQuery || msg.Service != cfg.Service {
-			continue
-		}
+			advertiseIP, err := advertisedIP(cfg.ServiceHost, clientAddr)
+			if err != nil {
+				cfg.logf("resolve advertised IP for %s: %v", clientAddr, err)
+				continue
+			}
 
-		advertiseIP, err := advertisedIP(cfg.ServiceHost, clientAddr)
-		if err != nil {
-			cfg.logf("resolve advertised IP for %s: %v", clientAddr, err)
-			continue
-		}
+			resp := broadcast.Message{
+				Type:    broadcast.MessageTypeResponse,
+				Service: cfg.Service,
+				Addr:    broadcast.AddrWithPort(advertiseIP, cfg.servicePort()),
+				Meta:    cloneMeta(cfg.Meta),
+			}
 
-		resp := broadcast.Message{
-			Type:    broadcast.MessageTypeResponse,
-			Service: cfg.Service,
-			Addr:    broadcast.AddrWithPort(advertiseIP, cfg.servicePort()),
-			Meta:    cloneMeta(cfg.Meta),
-		}
+			payload, err := broadcast.EncodeMessage(resp)
+			if err != nil {
+				cfg.logf("encode discovery response: %v", err)
+				continue
+			}
 
-		payload, err := broadcast.EncodeMessage(resp)
-		if err != nil {
-			cfg.logf("encode discovery response: %v", err)
-			continue
-		}
+			if _, err := conn.WriteToUDP(payload, clientAddr); err != nil {
+				cfg.logf("reply to %s: %v", clientAddr, err)
+				continue
+			}
 
-		if _, err := conn.WriteToUDP(payload, clientAddr); err != nil {
-			cfg.logf("reply to %s: %v", clientAddr, err)
-			continue
+			cfg.logf("discovery hit from %s -> %s", clientAddr, resp.Addr)
 		}
-
-		cfg.logf("discovery hit from %s -> %s", clientAddr, resp.Addr)
 	}
 }
 
