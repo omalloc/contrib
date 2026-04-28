@@ -73,17 +73,24 @@ func ListenAndServe(ctx context.Context, cfg Config) error {
 				continue
 			}
 
-			advertiseIP, err := advertisedIP(cfg.ServiceHost, clientAddr)
+			advertiseIP, ifaceName, err := advertisedIP(cfg.ServiceHost, clientAddr)
 			if err != nil {
 				cfg.logf("resolve advertised IP for %s: %v", clientAddr, err)
 				continue
 			}
 
+			clonedMeta := cloneMeta(cfg.Meta)
+			if ifaceName != "" {
+				if clonedMeta == nil {
+					clonedMeta = make(map[string]string, 1)
+				}
+				clonedMeta["iface"] = ifaceName
+			}
 			resp := broadcast.Message{
 				Type:    broadcast.MessageTypeResponse,
 				Service: cfg.Service,
 				Addr:    broadcast.AddrWithPort(advertiseIP, cfg.servicePort()),
-				Meta:    cloneMeta(cfg.Meta),
+				Meta:    clonedMeta,
 			}
 
 			payload, err := broadcast.EncodeMessage(resp)
@@ -149,20 +156,20 @@ func (c Config) logf(format string, args ...any) {
 	c.Logger.Printf(format, args...)
 }
 
-func advertisedIP(serviceHost string, clientAddr *net.UDPAddr) (net.IP, error) {
+func advertisedIP(serviceHost string, clientAddr *net.UDPAddr) (net.IP, string, error) {
 	if serviceHost != "" {
 		ip := net.ParseIP(serviceHost)
 		if ip == nil {
-			return nil, &net.ParseError{Type: "IP address", Text: serviceHost}
+			return nil, "", &net.ParseError{Type: "IP address", Text: serviceHost}
 		}
 		ipv4 := ip.To4()
 		if ipv4 == nil {
-			return nil, &net.ParseError{Type: "IPv4 address", Text: serviceHost}
+			return nil, "", &net.ParseError{Type: "IPv4 address", Text: serviceHost}
 		}
-		return ipv4, nil
+		return ipv4, "", nil
 	}
 
-	return broadcast.IPv4ForPeer(broadcast.ParseIPv4(clientAddr))
+	return broadcast.IPv4ForPeerWithInterface(broadcast.ParseIPv4(clientAddr))
 }
 
 func readDeadline(ctx context.Context) time.Time {

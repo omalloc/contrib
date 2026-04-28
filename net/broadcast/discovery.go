@@ -116,13 +116,19 @@ func SubnetBroadcastTargets(port int) ([]*net.UDPAddr, error) {
 }
 
 func IPv4ForPeer(peer net.IP) (net.IP, error) {
+	ip, _, err := IPv4ForPeerWithInterface(peer)
+	return ip, err
+}
+
+func IPv4ForPeerWithInterface(peer net.IP) (net.IP, string, error) {
 	interfaces, err := net.Interfaces()
 	if err != nil {
-		return nil, fmt.Errorf("list interfaces: %w", err)
+		return nil, "", fmt.Errorf("list interfaces: %w", err)
 	}
 
 	peerV4 := peer.To4()
-	var fallback net.IP
+	var fallbackIP net.IP
+	var fallbackIface string
 
 	for _, iface := range interfaces {
 		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
@@ -145,21 +151,22 @@ func IPv4ForPeer(peer net.IP) (net.IP, error) {
 				continue
 			}
 
-			if fallback == nil {
-				fallback = append(net.IP(nil), ip...)
+			if fallbackIP == nil {
+				fallbackIP = append(net.IP(nil), ip...)
+				fallbackIface = iface.Name
 			}
 
 			if peerV4 != nil && ipNet.Contains(peerV4) {
-				return append(net.IP(nil), ip...), nil
+				return append(net.IP(nil), ip...), iface.Name, nil
 			}
 		}
 	}
 
-	if fallback != nil {
-		return fallback, nil
+	if fallbackIP != nil {
+		return fallbackIP, fallbackIface, nil
 	}
 
-	return nil, fmt.Errorf("no non-loopback IPv4 address found")
+	return nil, "", fmt.Errorf("no non-loopback IPv4 address found")
 }
 
 func AddrWithPort(ip net.IP, port int) string {
