@@ -79,6 +79,8 @@ func ListenAndServe(ctx context.Context, cfg Config) error {
 				continue
 			}
 
+			cfg.logf("discovery query from %s for service=%s, replying with %s:%d", clientAddr, msg.Service, advertiseIP, cfg.servicePort())
+
 			clonedMeta := cloneMeta(cfg.Meta)
 			if ifaceName != "" {
 				if clonedMeta == nil {
