@@ -1,0 +1,4 @@
+version: v2
+name: buf.build/omalloc/contrib
+modules:
+  - path: .
