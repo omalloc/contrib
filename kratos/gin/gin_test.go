@@ -17,7 +17,7 @@ import (
 	"github.com/go-kratos/kratos/v3/transport/http"
 	"github.com/go-resty/resty/v2"
 
-	kgin "github.com/omalloc/contrib/kratos/gin"
+	kgin "github.com/omalloc/contrib/v2/kratos/gin"
 )
 
 func ExampleMiddlewares() {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/omalloc/contrib/kratos/resty"
+	"github.com/omalloc/contrib/v2/kratos/resty"
 )
 
 type TestAnythingBody struct {

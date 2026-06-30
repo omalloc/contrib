@@ -11,7 +11,7 @@ import (
 	"github.com/go-kratos/kratos/v3/log"
 	"gorm.io/gorm"
 
-	"github.com/omalloc/contrib/kratos/orm"
+	"github.com/omalloc/contrib/v2/kratos/orm"
 )
 
 type Data struct {

@@ -3,8 +3,8 @@ package adapter_test
 import (
 	"testing"
 
-	"github.com/omalloc/contrib/kratos/registry/adapter"
-	"github.com/omalloc/contrib/protobuf"
+	"github.com/omalloc/contrib/v2/kratos/registry/adapter"
+	"github.com/omalloc/contrib/v2/protobuf"
 )
 
 func TestNewEtcdAdapter(t *testing.T) {

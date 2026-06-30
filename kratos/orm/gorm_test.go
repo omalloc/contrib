@@ -12,9 +12,9 @@ import (
 	"github.com/go-kratos/kratos/v3/log"
 	"gorm.io/gorm"
 
-	"github.com/omalloc/contrib/kratos/orm"
-	"github.com/omalloc/contrib/kratos/orm/crud"
-	"github.com/omalloc/contrib/protobuf"
+	"github.com/omalloc/contrib/v2/kratos/orm"
+	"github.com/omalloc/contrib/v2/kratos/orm/crud"
+	"github.com/omalloc/contrib/v2/protobuf"
 )
 
 type User struct {

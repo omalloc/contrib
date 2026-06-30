@@ -11,8 +11,8 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	"github.com/omalloc/contrib/kratos/orm/crud"
-	"github.com/omalloc/contrib/protobuf"
+	"github.com/omalloc/contrib/v2/kratos/orm/crud"
+	"github.com/omalloc/contrib/v2/protobuf"
 )
 
 // 测试用的模型结构

@@ -5,7 +5,7 @@ import (
 
 	clientv3 "go.etcd.io/etcd/client/v3"
 
-	protobuf "github.com/omalloc/contrib/protobuf"
+	protobuf "github.com/omalloc/contrib/v2/protobuf"
 )
 
 var (

@@ -1,14 +1,15 @@
 syntax = "proto3";
-package protobuf;
 
-option go_package = "github.com/omalloc/contrib/protobuf";
+package protobuf.v2;
+
+option go_package = "github.com/omalloc/contrib/v2/protobuf";
 option java_multiple_files = true;
-option java_package = "com.omalloc.protobuf.tracing";
+option java_package = "com.omalloc.protobuf.v2.tracing";
 option objc_class_prefix = "Tracing";
 
 message Tracing {
-   // 链路上报服务入口
+  // 链路上报服务入口
   string endpoint = 1;
-   // 服务名称
+  // 服务名称
   string custom_name = 3;
 }

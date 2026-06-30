@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/omalloc/contrib/net/broadcast"
+	"github.com/omalloc/contrib/v2/net/broadcast"
 )
 
 const (

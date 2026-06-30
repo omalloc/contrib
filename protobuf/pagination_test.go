@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/omalloc/contrib/protobuf"
+	"github.com/omalloc/contrib/v2/protobuf"
 )
 
 func TestPaginationWrap(t *testing.T) {

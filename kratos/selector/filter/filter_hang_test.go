@@ -8,7 +8,7 @@ import (
 	"github.com/go-kratos/kratos/v3/registry"
 	"github.com/go-kratos/kratos/v3/selector"
 
-	"github.com/omalloc/contrib/kratos/selector/filter"
+	"github.com/omalloc/contrib/v2/kratos/selector/filter"
 )
 
 func TestHangState(t *testing.T) {

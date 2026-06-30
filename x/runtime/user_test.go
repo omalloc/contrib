@@ -4,7 +4,7 @@ import (
 	"os/user"
 	"testing"
 
-	"github.com/omalloc/contrib/x/runtime"
+	"github.com/omalloc/contrib/v2/x/runtime"
 )
 
 func TestSetCurrentUser(t *testing.T) {

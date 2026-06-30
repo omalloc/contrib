@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	clientv3 "go.etcd.io/etcd/client/v3"
 
-	protobuf "github.com/omalloc/contrib/protobuf"
+	protobuf "github.com/omalloc/contrib/v2/protobuf"
 )
 
 func TestNewRegistrar(t *testing.T) {

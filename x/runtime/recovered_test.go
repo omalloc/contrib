@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/omalloc/contrib/x/runtime"
+	"github.com/omalloc/contrib/v2/x/runtime"
 )
 
 func TestPrintStackTrace(t *testing.T) {

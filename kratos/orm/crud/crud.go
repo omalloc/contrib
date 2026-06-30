@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/omalloc/contrib/protobuf"
+	"github.com/omalloc/contrib/v2/protobuf"
 )
 
 type CRUD[T any] interface {

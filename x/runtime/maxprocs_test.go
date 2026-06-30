@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/omalloc/contrib/x/runtime"
+	"github.com/omalloc/contrib/v2/x/runtime"
 )
 
 func TestAutoGOMAXPROCS(t *testing.T) {

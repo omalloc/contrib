@@ -11,7 +11,7 @@ import (
 	"github.com/go-kratos/kratos/v3/log"
 	"github.com/go-kratos/kratos/v3/transport/http"
 
-	"github.com/omalloc/contrib/kratos/resty"
+	"github.com/omalloc/contrib/v2/kratos/resty"
 )
 
 func TestToSnake(t *testing.T) {

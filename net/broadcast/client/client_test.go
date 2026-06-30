@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	broadcastclient "github.com/omalloc/contrib/net/broadcast/client"
-	broadcastserver "github.com/omalloc/contrib/net/broadcast/server"
+	broadcastclient "github.com/omalloc/contrib/v2/net/broadcast/client"
+	broadcastserver "github.com/omalloc/contrib/v2/net/broadcast/server"
 )
 
 func TestDiscoverWithExplicitTarget(t *testing.T) {

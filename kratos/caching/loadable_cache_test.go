@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel"
 
-	"github.com/omalloc/contrib/kratos/caching"
+	"github.com/omalloc/contrib/v2/kratos/caching"
 )
 
 func fakeRefresh() (map[int64]string, error) {
