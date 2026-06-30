@@ -3,16 +3,17 @@ package orm
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v3/log"
 	"gorm.io/gorm"
 	glog "gorm.io/gorm/logger"
 )
 
 type gormLogger struct {
 	debug                 bool
-	dbLog                 *log.Helper
+	dbLog                 *slog.Logger
 	SlowThreshold         time.Duration
 	SourceField           string
 	SkipCallerLookup      bool
@@ -24,7 +25,7 @@ func NewLogger(opts ...GormLoggerOption) *gormLogger {
 	// default options
 	r := &gormLogger{
 		debug:                 false,
-		dbLog:                 log.NewHelper(log.GetLogger()),
+		dbLog:                 log.Default(),
 		SlowThreshold:         500 * time.Millisecond, // 500毫秒查询 + 500毫秒业务响应 = 1s 用户最佳体验 loading 之内，超过则属于慢查询
 		SkipCallerLookup:      false,
 		SkipErrRecordNotFound: true,
@@ -44,9 +45,9 @@ func WithDebug() GormLoggerOption {
 }
 
 // WithLogHelper set gorm-logger and log filters..
-func WithLogHelper(klog log.Logger) GormLoggerOption {
+func WithLogHelper(klog *slog.Logger) GormLoggerOption {
 	return func(logger *gormLogger) {
-		logger.dbLog = log.NewHelper(klog)
+		logger.dbLog = klog
 	}
 }
 
@@ -103,17 +104,17 @@ func (gl *gormLogger) Trace(ctx context.Context, begin time.Time, fc func() (str
 		fields = append(fields, "err", err)
 		fields = append(fields, "sql", sql)
 		fields = append(fields, "rows", rows)
-		gl.dbLog.Errorw(fields...)
+		gl.dbLog.ErrorContext(ctx, "execute sql failed", fields...)
 	// check slow query
 	case elapsed > gl.SlowThreshold && gl.SlowThreshold != 0:
 		fields = append(fields, "sql", sql)
 		fields = append(fields, "rows", rows)
 		fields = append(fields, "slowElapsed", gl.SlowThreshold)
-		gl.dbLog.Warnw(fields...)
+		gl.dbLog.WarnContext(ctx, "execute sql slow", fields...)
 	// normal
 	default:
 		fields = append(fields, "sql", sql)
 		fields = append(fields, "rows", rows)
-		gl.dbLog.Debugw(fields...)
+		gl.dbLog.DebugContext(ctx, "execute sql", fields...)
 	}
 }

@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
+	"log/slog"
 	"testing"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/go-kratos/kratos/v3/log"
+	"github.com/go-kratos/kratos/v3/transport/http"
 
 	"github.com/omalloc/contrib/kratos/resty"
 )
@@ -50,7 +50,7 @@ func TestHealthService(t *testing.T) {
 	}
 
 	httpSrv := http.NewServer(http.Address(":60180"))
-	s := NewServer(checkers, log.NewStdLogger(io.Discard), httpSrv)
+	s := NewServer(checkers, log.NewLogger(slog.DiscardHandler), httpSrv)
 	s.Start(context.Background())
 
 	go func() {

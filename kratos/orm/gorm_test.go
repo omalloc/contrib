@@ -3,11 +3,13 @@ package orm_test
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"os"
 	"time"
 
 	// "gorm.io/driver/sqlite" // with cgo sqlite3
 	"github.com/glebarez/sqlite" // without cgo sqlite3
-	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v3/log"
 	"gorm.io/gorm"
 
 	"github.com/omalloc/contrib/kratos/orm"
@@ -45,7 +47,11 @@ func ExampleNew() {
 			orm.WIthSlowThreshold(time.Second*2),
 			orm.WithSkipCallerLookup(true),
 			orm.WithSkipErrRecordNotFound(true),
-			orm.WithLogHelper(log.NewFilter(log.GetLogger(), log.FilterLevel(log.LevelInfo))),
+			orm.WithLogHelper(log.NewLogger(
+				slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+					Level: slog.LevelInfo,
+				})),
+			),
 		),
 	)
 	if err != nil {

@@ -2,13 +2,13 @@ package health
 
 import (
 	"context"
+	"log/slog"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/go-kratos/kratos/v3/transport/http"
 )
 
 type Checker interface {
@@ -22,7 +22,7 @@ func (f CheckerFunc) Check(ctx context.Context) error {
 }
 
 type Server struct {
-	log *log.Helper
+	log *slog.Logger
 	s   *http.Server
 	srv *HealthService
 }
@@ -45,17 +45,17 @@ func (h *Server) Stop(ctx context.Context) error {
 	return nil
 }
 
-func NewServer(health []Checker, logger log.Logger, s *http.Server) *Server {
+func NewServer(health []Checker, logger *slog.Logger, s *http.Server) *Server {
 	return &Server{
 		s:   s,
-		log: log.NewHelper(log.With(logger, "component", "health")),
+		log: logger,
 		srv: NewHealthService(logger, health),
 	}
 }
 
 // HealthService is a health service.
 type HealthService struct {
-	log        *log.Helper
+	log        *slog.Logger
 	stop       chan struct{}
 	status     Status
 	components sync.Map
@@ -63,9 +63,9 @@ type HealthService struct {
 	tick       time.Duration
 }
 
-func NewHealthService(logger log.Logger, checkers []Checker) *HealthService {
+func NewHealthService(logger *slog.Logger, checkers []Checker) *HealthService {
 	s := &HealthService{
-		log:        log.NewHelper(logger),
+		log:        logger,
 		checkers:   checkers,
 		status:     Status_DOWN,
 		stop:       make(chan struct{}, 1),
@@ -73,7 +73,7 @@ func NewHealthService(logger log.Logger, checkers []Checker) *HealthService {
 		tick:       time.Second * 1,
 	}
 
-	s.log.Debugf("health checker count %d", len(checkers))
+	s.log.Debug("health checked", "count", len(checkers))
 
 	go s.checker()
 
