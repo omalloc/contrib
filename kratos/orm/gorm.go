@@ -35,6 +35,13 @@ func WithDriver(driver gorm.Dialector) Option {
 	}
 }
 
+// WithConfig set gorm config.
+func WithConfig(gr *gorm.Config) Option {
+	return func(c *Config) {
+		c.opts = gr
+	}
+}
+
 // WithTracing set gorm-tracing. used for opentelemetry.
 func WithTracing() Option {
 	return func(c *Config) {
@@ -61,19 +68,20 @@ func New(opts ...Option) (*gorm.DB, error) {
 	c := &Config{
 		hasDebug: false,
 		tracing:  false,
-		opts:     nil,
-		log:      glog.Default,
+		opts: &gorm.Config{
+			CreateBatchSize:      1000,  // 默认 1000
+			AllowGlobalUpdate:    false, // 默认不允许全表更新
+			DisableAutomaticPing: false, // 默认不禁用自动ping (数据库连接保活)
+			TranslateError:       true,  // 允许转换错误类型
+		},
+		log: glog.Default,
 	}
+
 	for _, o := range opts {
 		o(c)
 	}
 
-	c.opts = &gorm.Config{
-		Logger:               c.log, // 默认使用 gorm.Default
-		CreateBatchSize:      1000,  // 默认 1000
-		AllowGlobalUpdate:    false, // 默认不允许全表更新
-		DisableAutomaticPing: false, // 默认不禁用自动ping (数据库连接保活)
-	}
+	c.opts.Logger = c.log
 
 	if c.driver == nil {
 		return nil, ErrDriverNotFound

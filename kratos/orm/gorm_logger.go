@@ -93,7 +93,7 @@ func (gl *gormLogger) Trace(ctx context.Context, begin time.Time, fc func() (str
 	elapsed := time.Since(begin)
 	timeUsed := float64(elapsed.Nanoseconds()) / 1e6
 
-	fields := make([]interface{}, 0)
+	fields := make([]any, 0)
 	fields = append(fields, "timeUsed", timeUsed)
 
 	sql, rows := fc()
@@ -113,8 +113,10 @@ func (gl *gormLogger) Trace(ctx context.Context, begin time.Time, fc func() (str
 		gl.dbLog.WarnContext(ctx, "execute sql slow", fields...)
 	// normal
 	default:
-		fields = append(fields, "sql", sql)
-		fields = append(fields, "rows", rows)
-		gl.dbLog.DebugContext(ctx, "execute sql", fields...)
+		if gl.dbLog.Enabled(ctx, slog.LevelDebug) {
+			fields = append(fields, "sql", sql)
+			fields = append(fields, "rows", rows)
+			gl.dbLog.DebugContext(ctx, "execute sql", fields...)
+		}
 	}
 }

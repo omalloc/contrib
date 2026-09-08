@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"time"
 
@@ -19,7 +19,7 @@ type Config struct {
 	ServicePort   int
 	ServiceHost   string
 	Meta          map[string]string
-	Logger        *log.Logger
+	Logger        *slog.Logger
 	BufferSize    int
 }
 
@@ -155,7 +155,7 @@ func (c Config) logf(format string, args ...any) {
 	if c.Logger == nil {
 		return
 	}
-	c.Logger.Printf(format, args...)
+	c.Logger.Debug(fmt.Sprintf(format, args...))
 }
 
 func advertisedIP(serviceHost string, clientAddr *net.UDPAddr) (net.IP, string, error) {
